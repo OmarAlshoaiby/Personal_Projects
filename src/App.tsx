@@ -9,10 +9,14 @@ import {
 import CodeBlock from './components/CodeBlock';
 
 const sections = [
+  { id: 'foundation', title: 'Tauri v2 & SQLite', icon: Server, color: 'blue' },
+  { id: 'tokenizer', title: 'Tokenizer Pipeline', icon: GitBranch, color: 'purple' },
   { id: 'crdt', title: 'CRDT Persistence', icon: Database, color: 'blue' },
   { id: 'fsrs', title: 'FSRS Integration', icon: Brain, color: 'purple' },
   { id: 'audio', title: 'Audio Pipeline', icon: AudioLines, color: 'cyan' },
   { id: 'async', title: 'Async Hardening', icon: Cpu, color: 'green' },
+  { id: 'canvas', title: 'Virtualized Canvas', icon: Layers, color: 'orange' },
+  { id: 'production', title: 'Production Hardening', icon: Shield, color: 'green' },
   { id: 'synthesis', title: 'Architecture Synthesis', icon: Layers, color: 'orange' },
 ];
 
@@ -76,7 +80,7 @@ function NavSidebar({ activeSection, mobileOpen, onClose }: { activeSection: str
           <div className="mt-8 p-4 rounded-lg bg-surface-700/50 border border-surface-600">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tech Stack</p>
             <div className="space-y-2">
-              {['Rust', 'Tauri v2', 'SQLite', 'yrs (CRDT)', 'FSRS', 'Whisper'].map(tech => (
+              {['Rust', 'Tauri v2', 'SQLite (WAL/MMIO)', 'yrs (CRDT)', 'Aho-Corasick', 'FSRS', 'Whisper.cpp', 'OffscreenCanvas', 'WASM'].map(tech => (
                 <div key={tech} className="flex items-center gap-2 text-xs text-slate-400">
                   <div className="w-1.5 h-1.5 rounded-full bg-accent-blue"></div>
                   {tech}
@@ -155,10 +159,10 @@ function HeroSection() {
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
         >
           {[
-            { label: 'Subsystems', value: '4' },
-            { label: 'Rust Crates', value: '12+' },
+            { label: 'Subsystems', value: '8' },
+            { label: 'Rust Crates', value: '15+' },
             { label: 'Zero Network', value: '100%' },
-            { label: 'Offline Ready', value: 'Yes' },
+            { label: 'App Size', value: '~8 MB' },
           ].map(stat => (
             <div key={stat.label} className="text-center">
               <div className="text-2xl font-bold text-white">{stat.value}</div>
@@ -166,6 +170,610 @@ function HeroSection() {
             </div>
           ))}
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function FoundationSection() {
+  return (
+    <section id="foundation" className="scroll-mt-8">
+      <div className="section-card p-6 md:p-8 mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-accent-blue/10 flex items-center justify-center">
+            <Server size={20} className="text-accent-blue" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Tauri v2 & Optimized SQLite</h2>
+            <p className="text-sm text-slate-500">Application scaffolding & embedded storage engine</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 text-slate-300 leading-relaxed">
+          <p>
+            The foundation is a <strong className="text-white">Tauri v2 shell</strong> paired with an optimally configured
+            embedded SQLite storage engine. By containerizing a compiled Rust backend within a native OS webview, Tauri
+            enables a truly local-first experience where all core operations occur offline at machine speed. The final
+            package is typically <strong className="text-white">5-10 MB</strong> vs Electron's 120+ MB.
+          </p>
+
+          <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+            <p className="text-sm">
+              <strong className="text-accent-blue">Key Insight:</strong> The IPC bridge must be treated as a
+              high-bandwidth pipe for heavy data, not a mechanism for fine-grained, chatty communication.
+              All data passed across the boundary is serialized to JSON — minimize these calls.
+            </p>
+          </div>
+
+          <p>
+            SQLite performance is unlocked through aggressive configuration. Memory-Mapped I/O (MMIO) eliminates
+            kernel-user space data copy overhead. Write-Ahead Logging (WAL) enables high reader concurrency.
+            These pragmas are prerequisites for meeting sub-25ms initial lesson loads.
+          </p>
+        </div>
+
+        {/* SQLite Pragmas Table */}
+        <div className="mt-6 overflow-x-auto">
+          <table className="doc-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Configuration</th>
+                <th>Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="font-medium text-white">Memory-Mapped I/O</td>
+                <td><code className="text-accent-cyan font-mono text-xs">PRAGMA mmap_size = 268435456</code></td>
+                <td className="text-xs">256MB maps working set; eliminates copy overhead for reads</td>
+              </tr>
+              <tr>
+                <td className="font-medium text-white">WAL Mode</td>
+                <td><code className="text-accent-cyan font-mono text-xs">PRAGMA journal_mode = WAL</code></td>
+                <td className="text-xs">Multiple readers + single writer without blocking</td>
+              </tr>
+              <tr>
+                <td className="font-medium text-white">Sync Mode</td>
+                <td><code className="text-accent-cyan font-mono text-xs">PRAGMA synchronous = NORMAL</code></td>
+                <td className="text-xs">Balance durability with responsiveness</td>
+              </tr>
+              <tr>
+                <td className="font-medium text-white">Vector Search</td>
+                <td><code className="text-accent-cyan font-mono text-xs">sqlite-vec</code> extension</td>
+                <td className="text-xs">Native vector search for contextual WSD</td>
+              </tr>
+              <tr>
+                <td className="font-medium text-white">Bulk Inserts</td>
+                <td><code className="text-accent-cyan font-mono text-xs">BEGIN...COMMIT</code></td>
+                <td className="text-xs">Prevent per-statement transaction overhead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* DB Init Code */}
+        <CodeBlock
+          language="rust"
+          filename="src/db.rs"
+          code={`use rusqlite::{Connection, Result, params};
+use std::sync::Mutex;
+
+pub struct Database {
+    conn: Mutex<Connection>,
+}
+
+impl Database {
+    pub fn new(db_path: &str) -> Result<Self> {
+        let conn = Connection::open(db_path)?;
+
+        // Critical Performance Pragmas
+        conn.execute_batch("
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA mmap_size = 268435456;  -- 256MB MMIO
+            PRAGMA cache_size = -64000;     -- 64MB cache
+            PRAGMA temp_store = MEMORY;
+        ")?;
+
+        // Initialize Schema
+        conn.execute_batch("
+            CREATE TABLE IF NOT EXISTS terms (
+                id INTEGER PRIMARY KEY,
+                surface TEXT NOT NULL,
+                status TEXT NOT NULL,
+                fsrs_stability REAL,
+                fsrs_difficulty REAL,
+                last_review INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS sync_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                update_data BLOB NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS snapshots (
+                id INTEGER PRIMARY KEY,
+                data BLOB NOT NULL,
+                timestamp INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_terms_surface
+                ON terms(surface);
+        ")?;
+
+        Ok(Self { conn: Mutex::new(conn) })
+    }
+}`}
+        />
+
+        <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4 mt-4">
+          <p className="text-sm">
+            <strong className="text-accent-orange">⚠️ Windows Caveat:</strong> The OS cannot truncate a memory-mapped
+            file. After <code className="text-accent-cyan font-mono text-xs">VACUUM</code>, the file may retain unused
+            space. Also, MMIO'd data could be written to unencrypted swap — a privacy consideration.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TokenizerSection() {
+  return (
+    <section id="tokenizer" className="scroll-mt-8">
+      <div className="section-card p-6 md:p-8 mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-accent-purple/10 flex items-center justify-center">
+            <GitBranch size={20} className="text-accent-purple" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Advanced Tokenizer Pipeline</h2>
+            <p className="text-sm text-slate-500">Linear-time multi-word expression matching</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 text-slate-300 leading-relaxed">
+          <p>
+            The central algorithmic innovation replaces inefficient server-side relational joins with a client-side
+            tokenizer pipeline achieving <strong className="text-white">linear-time complexity</strong> for Multi-Word
+            Expression (MWE) matching using the <strong className="text-white">Aho-Corasick algorithm</strong>.
+          </p>
+
+          <p>
+            The pipeline is a modular, hierarchical process with three distinct stages that produces richly annotated
+            output ready for rendering.
+          </p>
+        </div>
+
+        {/* Pipeline stages */}
+        <div className="grid md:grid-cols-3 gap-4 my-6">
+          {[
+            {
+              step: '1',
+              title: 'Base Tokenization',
+              desc: 'Segment raw text into grapheme clusters using unicode-segmentation. Preserve byte-level offsets for precise positioning.',
+              crate: 'unicode-segmentation',
+            },
+            {
+              step: '2',
+              title: 'Aho-Corasick MWE Match',
+              desc: 'Build automaton with LeftmostLongest semantics. Scan text once to find all multi-word expressions simultaneously.',
+              crate: 'aho-corasick',
+            },
+            {
+              step: '3',
+              title: 'State Reconciliation',
+              desc: 'Overlay MWE byte ranges onto base tokens. Check remaining tokens against single-word vocabulary hash map.',
+              crate: 'HashMap<String, TermData>',
+            },
+          ].map(stage => (
+            <div key={stage.step} className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-6 h-6 rounded-full bg-accent-purple/20 text-accent-purple text-xs font-bold flex items-center justify-center">{stage.step}</span>
+                <h4 className="text-white font-semibold text-sm">{stage.title}</h4>
+              </div>
+              <p className="text-slate-400 text-xs mb-2">{stage.desc}</p>
+              <code className="text-accent-cyan font-mono text-xs">{stage.crate}</code>
+            </div>
+          ))}
+        </div>
+
+        {/* Code */}
+        <CodeBlock
+          language="rust"
+          filename="src/tokenizer.rs"
+          code={`use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
+use unicode_segmentation::UnicodeSegmentation;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ProcessedToken {
+    pub surface: String,
+    pub start_byte: usize,
+    pub end_byte: usize,
+    pub term_id: Option<u64>,
+    pub is_mwe_part: bool,
+    pub is_whitespace: bool,
+}
+
+pub struct TokenizerPipeline {
+    ac_automaton: AhoCorasick,
+    single_word_map: HashMap<String, u64>,
+}
+
+impl TokenizerPipeline {
+    pub fn new(
+        mwes: Vec<String>,
+        single_words: Vec<(String, u64)>,
+    ) -> Self {
+        // LeftmostLongest: "take into account" beats "take"
+        let ac = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(&mwes);
+
+        let word_map: HashMap<String, u64> =
+            single_words.into_iter().collect();
+
+        Self {
+            ac_automaton: ac,
+            single_word_map: word_map,
+        }
+    }
+
+    pub fn process(&self, raw_text: &str) -> Vec<ProcessedToken> {
+        // Stage 1: Grapheme clusters for Unicode safety
+        let mut tokens: Vec<ProcessedToken> = raw_text
+            .grapheme_indices(true)
+            .map(|(idx, grapheme)| ProcessedToken {
+                surface: grapheme.to_string(),
+                start_byte: idx,
+                end_byte: idx + grapheme.len(),
+                term_id: None,
+                is_mwe_part: false,
+                is_whitespace: grapheme.trim().is_empty(),
+            })
+            .collect();
+
+        // Stage 2: Aho-Corasick MWE matching
+        let mwe_ranges: Vec<(usize, usize)> = self
+            .ac_automaton
+            .find_iter(raw_text)
+            .map(|m| (m.start(), m.end()))
+            .collect();
+
+        for token in &mut tokens {
+            if token.is_whitespace { continue; }
+            token.is_mwe_part = mwe_ranges.iter().any(|&(s, e)| {
+                token.start_byte >= s && token.end_byte <= e
+            });
+        }
+
+        // Stage 3: Single word reconciliation
+        for token in &mut tokens {
+            if token.is_mwe_part || token.is_whitespace {
+                continue;
+            }
+            let clean = token.surface.to_lowercase();
+            if let Some(&id) = self.single_word_map.get(&clean) {
+                token.term_id = Some(id);
+            }
+        }
+
+        tokens
+    }
+}`}
+        />
+
+        <div className="bg-gradient-to-r from-accent-purple/5 to-accent-blue/5 border border-accent-purple/20 rounded-lg p-4 mt-4">
+          <p className="text-sm">
+            <strong className="text-accent-purple">Performance:</strong> The <code className="text-accent-cyan font-mono text-xs">aho-corasick</code> crate
+            supports SIMD acceleration. Matching tens of thousands of MWEs against large text documents remains
+            fast and responsive — <strong className="text-white">O(n)</strong> regardless of vocabulary size.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CanvasSection() {
+  return (
+    <section id="canvas" className="scroll-mt-8">
+      <div className="section-card p-6 md:p-8 mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-accent-orange/10 flex items-center justify-center">
+            <Layers size={20} className="text-accent-orange" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Virtualized Canvas Rendering</h2>
+            <p className="text-sm text-slate-500">O(1) DOM nodes via OffscreenCanvas + Web Workers</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 text-slate-300 leading-relaxed">
+          <p>
+            The <strong className="text-white">"DOM Overdraw" problem</strong> is the primary cause of poor performance
+            in existing language immersion tools. Rendering each word as an independent DOM element creates tens of
+            thousands of nodes, causing high memory consumption and stuttering UIs.
+          </p>
+
+          <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+            <p className="text-sm">
+              <strong className="text-accent-orange">Lighthouse Warning:</strong> Pages with &gt;800 DOM nodes trigger
+              warnings. Anything over 1,400 is considered excessive. A 50,000-word lesson would create catastrophic DOM size.
+            </p>
+          </div>
+
+          <p>
+            The solution is a <strong className="text-white">virtualized UI component</strong> that limits rendering
+            to only the elements currently visible within the user's viewport. For maximum performance, an
+            <code className="px-1.5 py-0.5 rounded bg-surface-700 text-accent-cyan text-sm font-mono">OffscreenCanvas</code> powered
+            by a <strong className="text-white">Web Worker</strong> handles all text measurement and drawing off the main thread.
+          </p>
+        </div>
+
+        {/* Architecture diagram */}
+        <div className="mt-6 bg-surface-700/30 border border-surface-600 rounded-lg p-6">
+          <h4 className="text-white font-semibold text-sm mb-4 text-center">Rendering Architecture</h4>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-full max-w-lg bg-surface-800 border border-accent-blue/30 rounded-lg p-3 text-center">
+              <p className="text-xs text-accent-blue font-semibold">Main Thread</p>
+              <p className="text-xs text-slate-500 mt-1">Scroll events • Click handling • IPC requests</p>
+            </div>
+            <div className="text-slate-500 text-xs">↕ postMessage (token slice)</div>
+            <div className="w-full max-w-lg bg-surface-800 border border-accent-purple/30 rounded-lg p-3 text-center">
+              <p className="text-xs text-accent-purple font-semibold">Web Worker (OffscreenCanvas)</p>
+              <p className="text-xs text-slate-500 mt-1">Text measurement • Layout calculation • Drawing operations</p>
+            </div>
+            <div className="text-slate-500 text-xs">↕ transferToImageBitmap</div>
+            <div className="w-full max-w-lg bg-surface-800 border border-accent-green/30 rounded-lg p-3 text-center">
+              <p className="text-xs text-accent-green font-semibold">Rust Backend (Tauri)</p>
+              <p className="text-xs text-slate-500 mt-1">Authoritative token state • Viewport slice queries</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Frontend pseudocode */}
+        <CodeBlock
+          language="rust"
+          filename="Reader.tsx (conceptual)"
+          code={`// Virtualized Canvas Component (React)
+const VirtualizedReader = ({ lessonId }) => {
+  const canvasRef = useRef(null);
+  const [allTokens, setAllTokens] = useState([]);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  // Worker for off-main-thread rendering
+  const worker = useMemo(
+    () => new Worker(
+      new URL('./canvasWorker.ts', import.meta.url)
+    ), []
+  );
+
+  // Load data from Rust backend
+  useEffect(() => {
+    invoke('load_and_tokenize_lesson', { lessonId })
+      .then(setAllTokens);
+  }, [lessonId]);
+
+  // Calculate visible window on scroll
+  useEffect(() => {
+    const startRow = Math.floor(scrollTop / ROW_HEIGHT);
+    const visibleRows = Math.ceil(
+      containerHeight / ROW_HEIGHT
+    ) + 2; // Buffer rows
+    const startIndex = startRow * TOKENS_PER_ROW;
+    const endIndex = Math.min(
+      startIndex + (visibleRows * TOKENS_PER_ROW),
+      allTokens.length
+    );
+
+    const visibleTokens = allTokens.slice(
+      startIndex, endIndex
+    );
+
+    // Send to worker for drawing
+    worker.postMessage({
+      type: 'RENDER',
+      tokens: visibleTokens,
+      width: canvas.width,
+      height: canvas.height,
+      offsetY: startRow * ROW_HEIGHT,
+    });
+  }, [scrollTop, allTokens]);
+
+  return (
+    <div onScroll={handleScroll}
+         style={{ height: '100vh', overflowY: 'scroll' }}>
+      {/* Spacer for correct scroll height */}
+      <div style={{
+        height: (allTokens.length / TOKENS_PER_ROW)
+                * ROW_HEIGHT
+      }} />
+      <canvas ref={canvasRef}
+              style={{ position: 'absolute', top: 0 }} />
+    </div>
+  );
+};`}
+        />
+
+        <div className="grid md:grid-cols-2 gap-4 mt-6">
+          <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+            <h4 className="text-white font-semibold text-sm mb-2">WASM Optimization</h4>
+            <p className="text-slate-400 text-xs">
+              For hover events, compile tokenizer logic to WASM and execute synchronously in the browser's
+              main thread — instant visual feedback without IPC serialization delay.
+            </p>
+          </div>
+          <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+            <h4 className="text-white font-semibold text-sm mb-2">Zero-Copy IPC</h4>
+            <p className="text-slate-400 text-xs">
+              Use <code className="text-accent-cyan font-mono text-xs">rkyv</code> or <code className="text-accent-cyan font-mono text-xs">bincode</code> for
+              binary token payloads instead of JSON. Tauri v2 supports raw <code className="text-accent-cyan font-mono text-xs">Vec&lt;u8&gt;</code> responses.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductionSection() {
+  return (
+    <section id="production" className="scroll-mt-8">
+      <div className="section-card p-6 md:p-8 mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-accent-green/10 flex items-center justify-center">
+            <Shield size={20} className="text-accent-green" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Production Hardening</h2>
+            <p className="text-sm text-slate-500">Build system, error handling, CI/CD & code signing</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 text-slate-300 leading-relaxed">
+          <p>
+            Transitioning from blueprint to production requires addressing security boundaries, crash telemetry,
+            cross-platform build pipelines, memory safety across FFI boundaries, and strict error handling.
+            <code className="px-1.5 py-0.5 rounded bg-surface-700 text-red-400 text-sm font-mono">unwrap()</code> is
+            strictly forbidden in production code.
+          </p>
+        </div>
+
+        {/* Cargo.toml */}
+        <CodeBlock
+          language="rust"
+          filename="Cargo.toml"
+          code={`[package]
+name = "lingua-core"
+version = "1.0.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+# Tauri v2 Core
+tauri = { version = "2.0", features = [
+    "macos-private-api", "tray-icon", "updater"
+] }
+tauri-plugin-fs = "2.0"
+tauri-plugin-store = "2.0"
+
+# Async Runtime
+tokio = { version = "1.38", features = ["full"] }
+
+# Database & CRDT
+rusqlite = { version = "0.31", features = [
+    "bundled", "backup", "blob", "wal"
+] }
+yrs = { version = "0.21", features = ["sync"] }
+
+# AI & NLP
+whisper-rs = { version = "0.11", features = [
+    "metal", "cuda"
+] }
+aho-corasick = "1.1"
+fsrs = "2.0"
+
+# Observability
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter", "json"
+] }
+sentry = { version = "0.34", features = [
+    "tracing", "anyhow"
+] }
+
+[build-dependencies]
+cmake = "0.1"
+cc = "1.0"`}
+        />
+
+        {/* Error handling */}
+        <CodeBlock
+          language="rust"
+          filename="src/error.rs"
+          code={`use serde::Serialize;
+use thiserror::Error;
+
+#[derive(Debug, Error, Serialize)]
+pub enum AppError {
+    #[error("Database error: {0}")]
+    Database(String),
+    #[error("CRDT sync failed: {0}")]
+    CrdtSync(String),
+    #[error("AI Inference error: {0}")]
+    Inference(String),
+    #[error("IPC serialization error")]
+    Serialization,
+}
+
+// Auto-converts to rejected JS Promise
+impl From<rusqlite::Error> for AppError {
+    fn from(err: rusqlite::Error) -> Self {
+        AppError::Database(err.to_string())
+    }
+}`}
+        />
+
+        {/* Tauri capabilities */}
+        <div className="mt-6">
+          <h4 className="text-white font-semibold text-sm mb-3">Tauri v2 Capability Scoping</h4>
+          <CodeBlock
+            language="rust"
+            filename="capabilities/default.json"
+            code={`{
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$APPDATA/**" },
+        { "path": "$DOCUMENTS/Import/**" }
+      ]
+    },
+    "shell:allow-open",
+    "store:default"
+  ]
+}`}
+          />
+          <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-3 mt-3">
+            <p className="text-xs text-slate-400">
+              <strong className="text-accent-orange">Security:</strong> Never grant <code className="text-accent-cyan font-mono text-xs">fs:allow-write-file</code> to
+              <code className="text-accent-cyan font-mono text-xs"> $HOME/**</code>. Scope strictly to app data directory and designated import folders.
+            </p>
+          </div>
+        </div>
+
+        {/* CI/CD */}
+        <div className="mt-6">
+          <h4 className="text-white font-semibold text-sm mb-3">CI/CD & Auto-Updates</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+              <h5 className="text-accent-cyan font-semibold text-xs mb-2">GitHub Actions</h5>
+              <ul className="text-xs text-slate-400 space-y-1">
+                <li>• Universal binary (Intel + Apple Silicon)</li>
+                <li>• Windows code signing (SmartScreen)</li>
+                <li>• macOS notarization (Gatekeeper)</li>
+                <li>• Linux AppImage + deb</li>
+              </ul>
+            </div>
+            <div className="bg-surface-700/30 border border-surface-600 rounded-lg p-4">
+              <h5 className="text-accent-cyan font-semibold text-xs mb-2">Pre-Flight Checklist</h5>
+              <ul className="text-xs text-slate-400 space-y-1">
+                <li>• WAL checkpoint every 6 hours</li>
+                <li>• Memory leak profiling with <code className="text-accent-cyan font-mono">dhat</code></li>
+                <li>• Cross-platform path resolution</li>
+                <li>• GPU fallback warning for Whisper</li>
+                <li>• Database migration system (refinery)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -964,50 +1572,17 @@ export default function App() {
             <HeroSection />
 
             <div className="mt-16 space-y-12">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <CrdtSection />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <FsrsSection />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <AudioSection />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <AsyncSection />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <SynthesisSection />
-              </motion.div>
+              {[FoundationSection, TokenizerSection, CrdtSection, FsrsSection, AudioSection, AsyncSection, CanvasSection, ProductionSection, SynthesisSection].map((Section, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Section />
+                </motion.div>
+              ))}
             </div>
 
             {/* Footer */}
